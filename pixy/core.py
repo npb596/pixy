@@ -1,3 +1,10 @@
+import sys
+sys.path.append("/home/npb0015/conda/pkgs/scikit-allel-1.3.5-py38h43a58ef_1/lib/python3.8/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/asciitree-0.3.3-py_2/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/numcodecs-0.9.1-py38h709712a_2/lib/python3.8/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/zarr-2.11.0-pyhd8ed1ab_0/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/fasteners-0.17.3-pyhd8ed1ab_0/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/multiprocess-0.70.12.2-py38h497a2fe_1/lib/python3.8/site-packages/")
 import allel
 import numcodecs
 import numpy as np
@@ -14,7 +21,7 @@ import argparse
 import shutil
 import uuid
 
-import pixy.calc
+import calc
 
 from multiprocess import Pool
 from multiprocess import Queue
@@ -258,7 +265,7 @@ def compute_summary_stats(args, popnames, popindices, temp_file, chromosome, chu
 
 
                 if(not callset_is_none and gt_array_fst is not None and len(gt_array_fst) > 0) :
-                    fst = pixy.calc.calc_fst_persite(gt_array_fst, fst_pop_indicies, args.fst_type)
+                    fst = calc.calc_fst_persite(gt_array_fst, fst_pop_indicies, args.fst_type)
                     window_positions = list(zip(pos_array_fst, pos_array_fst))
                     n_snps = [1]*len(pos_array_fst)
                     
@@ -328,7 +335,7 @@ def compute_summary_stats(args, popnames, popindices, temp_file, chromosome, chu
                         # number of sites genotyped in the population
                         # not directly used in the calculation
                         no_sites = np.count_nonzero(np.sum(gt_pop.count_alleles(max_allele = 1), 1))
-                        avg_pi, total_diffs, total_comps, total_missing = pixy.calc.calc_pi(gt_pop)
+                        avg_pi, total_diffs, total_comps, total_missing = calc.calc_pi(gt_pop)
 
                 # create a string of the pi results to write to file
                 #klk added NA so that pi/dxy/fst have the same # of columns
@@ -377,7 +384,7 @@ def compute_summary_stats(args, popnames, popindices, temp_file, chromosome, chu
                         pop1_sites = np.sum(pop1_gt_region.count_alleles(max_allele = 1), 1) > 0
                         pop2_sites = np.sum(pop2_gt_region.count_alleles(max_allele = 1), 1) > 0
                         no_sites = np.sum(np.logical_and(pop1_sites, pop2_sites))
-                        avg_dxy, total_diffs, total_comps, total_missing = pixy.calc.calc_dxy(pop1_gt_region, pop2_gt_region)
+                        avg_dxy, total_diffs, total_comps, total_missing = calc.calc_dxy(pop1_gt_region, pop2_gt_region)
 
                     # create a string of for the dxy results
                 pixy_result = "dxy" + "\t" + str(pop1) + "\t" + str(pop2) + "\t" + str(chromosome) + "\t" + str(window_pos_1) + "\t" + str(window_pos_2) + "\t" + str(avg_dxy) + "\t" + str(no_sites) + "\t" + str(total_diffs) + "\t" + str(total_comps) + "\t" + str(total_missing)
@@ -435,7 +442,7 @@ def compute_summary_stats(args, popnames, popindices, temp_file, chromosome, chu
                                     ac2 = gt_array_fst.count_alleles(subpop = fst_pop_indicies[1])
                                     fst, window_positions, n_snps = allel.windowed_hudson_fst(pos_array_fst, ac1, ac2, size = fst_window_size, start = window_pos_1, stop = window_pos_2)
                             else:
-                                fst, a, b, c, n_snps = pixy.calc.calc_fst(gt_array_fst, fst_pop_indicies, args.fst_type)
+                                fst, a, b, c, n_snps = calc.calc_fst(gt_array_fst, fst_pop_indicies, args.fst_type)
                                 window_positions = [[window_pos_1, window_pos_2]]
 
                         else:

@@ -33,8 +33,8 @@ from scipy import special
 from itertools import combinations
 from collections import Counter
 
-import pixy.core
-import pixy.calc
+import core
+import calc
 
 
 
@@ -102,7 +102,7 @@ def main():
     # returns parsed populaion, chromosome, and sample info
     print("[pixy] pixy " + version)
     print("[pixy] See documentation at https://pixy.readthedocs.io/en/latest/")
-    popnames, popindices, chrom_list, IDs, temp_file, output_folder, output_prefix, bed_df, sites_df = pixy.core.check_and_validate_args(args)
+    popnames, popindices, chrom_list, IDs, temp_file, output_folder, output_prefix, bed_df, sites_df = core.check_and_validate_args(args)
 
     print("\n[pixy] Preparing for calculation of summary statistics: " + ', '.join(map(str, args.stats)))
     
@@ -242,10 +242,10 @@ def main():
      
         # if aggregating, break down large windows into smaller windows
         if aggregate: 
-            window_list = pixy.core.assign_subwindows_to_windows(window_list, args.chunk_size)
+            window_list = core.assign_subwindows_to_windows(window_list, args.chunk_size)
        
         # using chunk_size, assign  windows to chunks
-        window_list = pixy.core.assign_windows_to_chunks(window_list, args.chunk_size)
+        window_list = core.assign_windows_to_chunks(window_list, args.chunk_size)
             
         # if using a sites file, assign sites to chunks, as with windows above
         if args.sites_file is not None:
@@ -254,7 +254,7 @@ def main():
             sites_pre_list = sites_df[sites_df['CHROM'] == chromosome]
             sites_pre_list = sites_pre_list['POS'].tolist()
             
-            sites_list = pixy.core.assign_sites_to_chunks(sites_pre_list, args.chunk_size)
+            sites_list = core.assign_sites_to_chunks(sites_pre_list, args.chunk_size)
         else:
             sites_df = None
         
@@ -285,7 +285,7 @@ def main():
                 chunk_pos_2 = max(window_list_chunk, key=lambda x: x[1])[1]
                 
                 # launch a summary stats job for this chunk
-                job = pool.apply_async(pixy.core.compute_summary_stats, args = (args, popnames, popindices, temp_file, chromosome, chunk_pos_1, chunk_pos_2, window_list_chunk, q, sites_list_chunk, aggregate, args.window_size))
+                job = pool.apply_async(core.compute_summary_stats, args = (args, popnames, popindices, temp_file, chromosome, chunk_pos_1, chunk_pos_2, window_list_chunk, q, sites_list_chunk, aggregate, args.window_size))
                 jobs.append(job)
 
             # launch all the jobs onto the pool
@@ -315,7 +315,7 @@ def main():
                 q = "NULL"
                 
                 # compute summary stats for all windows in the chunk window list
-                pixy.core.compute_summary_stats(args, popnames, popindices, temp_file, chromosome, chunk_pos_1, chunk_pos_2, window_list_chunk, q, sites_list_chunk, aggregate, args.window_size)
+                core.compute_summary_stats(args, popnames, popindices, temp_file, chromosome, chunk_pos_1, chunk_pos_2, window_list_chunk, q, sites_list_chunk, aggregate, args.window_size)
     
     # clean up any remaining jobs and stop the listener
     if (args.n_cores > 1):
@@ -365,7 +365,7 @@ def main():
             for chromosome in chrom_list:
                 outpi = outgrouped.get_group(("pi",chromosome)).reset_index(drop = True) #get this statistic, this chrom only
                 outpi.drop([0,2], axis=1, inplace=True) #get rid of "pi" and placeholder (NA) columns
-                outsorted = pixy.core.aggregate_output(outpi, stat, chromosome, window_size, args.fst_type)
+                outsorted = core.aggregate_output(outpi, stat, chromosome, window_size, args.fst_type)
                 outsorted.to_csv(outfile, sep="\t", mode='a', header=False, index=False, na_rep='NA') #write
                 
         else:
@@ -395,7 +395,7 @@ def main():
             for chromosome in chrom_list:
                 outdxy = outgrouped.get_group(("dxy",chromosome)).reset_index(drop = True) #get this statistic, this chrom only
                 outdxy.drop([0], axis=1, inplace=True) #get rid of "dxy"
-                outsorted = pixy.core.aggregate_output(outdxy, stat, chromosome, window_size, args.fst_type)
+                outsorted = core.aggregate_output(outdxy, stat, chromosome, window_size, args.fst_type)
                 outsorted.to_csv(outfile, sep="\t", mode='a', header=False, index=False, na_rep='NA') #write
                 
         else:
@@ -441,7 +441,7 @@ def main():
                 
                 if chromosome_has_data:
                     outfst.drop([0], axis=1, inplace=True) #get rid of "fst"
-                    outsorted = pixy.core.aggregate_output(outfst, stat, chromosome, window_size, args.fst_type)
+                    outsorted = core.aggregate_output(outfst, stat, chromosome, window_size, args.fst_type)
                     outsorted = outsorted.iloc[:,:-3] #drop components (for now)
                     outsorted.to_csv(outfile, sep="\t", mode='a', header=False, index=False, na_rep='NA') #write
                 
