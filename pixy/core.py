@@ -46,11 +46,11 @@ def aggregate_output(df_for_stat, stat, chromosome, window_size, fst_type):
  
     #group by population, window
     if stat == 'pi' or stat == 'watterson_theta' or stat == 'tajima_d': #pi, Watterson's theta, and Tajima's D only has one population field
-    outsorted = outsorted.groupby([1,'window_pos_1','window_pos_2'], as_index=False, dropna=False).agg({7:'sum',8:'sum',9:'sum',10:'sum'}).reset_index()
+        outsorted = outsorted.groupby([1,'window_pos_1','window_pos_2'], as_index=False, dropna=False).agg({7:'sum',8:'sum',9:'sum',10:'sum'}).reset_index()
     elif stat == 'dxy' or stat == 'fst': #dxy and fst have 2 population fields
         outsorted = outsorted.groupby([1,2,'window_pos_1','window_pos_2'], as_index=False, dropna=False).agg({7:'sum',8:'sum',9:'sum',10:'sum'}).reset_index()   
         
-    if stat == 'pi' or stat == 'dxy' or stat == 'watterson_theta' or stat == 'tajima_d'::
+    if stat == 'pi' or stat == 'dxy' or stat == 'watterson_theta' or stat == 'tajima_d':
         outsorted[stat] = outsorted[8]/outsorted[9]
     elif stat == 'fst':
         if fst_type == 'wc':
