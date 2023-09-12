@@ -2,7 +2,13 @@
 # coding: utf-8
 
 
-
+import sys
+sys.path.append("/home/npb0015/conda/pkgs/scikit-allel-1.3.5-py38h43a58ef_1/lib/python3.8/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/asciitree-0.3.3-py_2/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/numcodecs-0.9.1-py38h709712a_2/lib/python3.8/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/zarr-2.11.0-pyhd8ed1ab_0/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/fasteners-0.17.3-pyhd8ed1ab_0/site-packages/")
+sys.path.append("/home/npb0015/conda/pkgs/multiprocess-0.70.12.2-py38h497a2fe_1/lib/python3.8/site-packages/")
 import allel
 import numcodecs
 import numpy as np
