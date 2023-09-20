@@ -5,6 +5,7 @@ sys.path.append("/home/npb0015/conda/pkgs/numcodecs-0.9.1-py38h709712a_2/lib/pyt
 sys.path.append("/home/npb0015/conda/pkgs/zarr-2.11.0-pyhd8ed1ab_0/site-packages/")
 sys.path.append("/home/npb0015/conda/pkgs/fasteners-0.17.3-pyhd8ed1ab_0/site-packages/")
 sys.path.append("/home/npb0015/conda/pkgs/multiprocess-0.70.12.2-py38h497a2fe_1/lib/python3.8/site-packages/")
+import warnings
 import allel
 import numpy as np
 
@@ -240,7 +241,13 @@ def calc_tajima_d(gt_array):
         e2 = c2 / (a1**2 + a2)
         d_stdev += np.sqrt((e1 * S[n]) + (e2 * S[n] * (S[n] - 1)))
 
+    warnings.filterwarnings(action = 'error', category = RuntimeWarning)
+    try:
+        tajima_d = (calc_pi_alt(gt_array) - calc_watterson_theta(gt_array)[1]) / d_stdev
+    except RuntimeWarning:
+        tajima_d = 'NA'
+
 # return Tajima's D calculation using raw pi and Watterson's theta calculations above
 # also return the raw pi calculation, raw Watterson's theta, and standard deviation of their covariance individually
 # note that the "raw" values of pi and Watterson's theta are needed for Tajima's D, not the ones incorporating sites
-    return((calc_pi_alt(gt_array) - calc_watterson_theta(gt_array)[1]) / d_stdev, calc_pi_alt(gt_array), calc_watterson_theta(gt_array)[1], d_stdev)
+    return(tajima_d, calc_pi_alt(gt_array), calc_watterson_theta(gt_array)[1], d_stdev)
