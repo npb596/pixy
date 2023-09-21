@@ -203,18 +203,18 @@ def calc_watterson_theta(gt_array):
 # return averaged Watterson's theta, raw watterson's theta, and weighted site count
     return(watterson_theta/weighted_sites, watterson_theta, weighted_sites)
 
-def calc_pi_alt(gt_array):
+#def calc_pi_alt(gt_array):
 
 # counts of each of the two alleles at each site
-    allele_counts = gt_array.count_alleles(max_allele = 1)
+#    allele_counts = gt_array.count_alleles(max_allele = 1)
 
 # calculate mean pairwise differences and sum these together
-    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
-    mpd_sum = np.sum(mpd)
+#    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
+#    mpd_sum = np.sum(mpd)
 
 # return this as raw pi
 # this process is essentially the scikit-allel pi calculation
-    return(mpd_sum)
+#    return(mpd_sum)
 
 def calc_tajima_d(gt_array):
 
@@ -224,9 +224,12 @@ def calc_tajima_d(gt_array):
 # counts of only variant sites by excluding sites with variant count 0
     variant_counts = allele_counts[allele_counts[:,1] != 0]
 
+    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
+    raw_pi = np.sum(mpd)
 # for variant sites only, use Counter to generate dictionary
 # where the key is the number of genotypes and value is number of sites with that many genotypes
     S = Counter(variant_counts[:,0] + variant_counts[:,1])
+    watterson_theta = np.sum((S[n]/np.sum(1 / np.arange(1, n))) for n in S)
 
 # calculate denominator for Tajima's D as in scikit-allel but looping to incoporate missing genotypes
     d_stdev = 0
@@ -243,11 +246,11 @@ def calc_tajima_d(gt_array):
 
     warnings.filterwarnings(action = 'error', category = RuntimeWarning)
     try:
-        tajima_d = (calc_pi_alt(gt_array) - calc_watterson_theta(gt_array)[1]) / d_stdev
+        tajima_d = (raw_pi - watterson_theta) / d_stdev
     except RuntimeWarning:
         tajima_d = 'NA'
 
 # return Tajima's D calculation using raw pi and Watterson's theta calculations above
 # also return the raw pi calculation, raw Watterson's theta, and standard deviation of their covariance individually
 # note that the "raw" values of pi and Watterson's theta are needed for Tajima's D, not the ones incorporating sites
-    return(tajima_d, calc_pi_alt(gt_array), calc_watterson_theta(gt_array)[1], d_stdev)
+    return(tajima_d, raw_pi, watterson_theta, d_stdev)
