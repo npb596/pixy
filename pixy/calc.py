@@ -8,6 +8,7 @@ sys.path.append("/home/npb0015/conda/pkgs/multiprocess-0.70.12.2-py38h497a2fe_1/
 import warnings
 import allel
 import numpy as np
+from time import perf_counter
 
 from scipy import special
 from itertools import combinations
@@ -191,15 +192,30 @@ def calc_watterson_theta(gt_array):
 # where the key is the number of genotypes and value is number of sites with that many genotypes
     S = Counter(variant_counts[:,0] + variant_counts[:,1])
     N = Counter(allele_counts[:,0] + allele_counts[:,1])
+#    S_keys = np.array([x for x in S.keys()])
+#    S_values = np.array([y for y in S.values()])
+    S_dict = np.array(tuple(S.items()))
+    N_dict = np.array(tuple(N.items()))
 
 # calculate watterson's theta as sum of equations for differing numbers of genotypes
 # this is calculating Watterson's theta incorporating missing genotypes
-    watterson_theta = np.sum((S[n]/np.sum(1 / np.arange(1, n))) for n in S)
-
+#    start = perf_counter()
+#    watterson_theta = np.sum((s/np.sum(1 / np.arange(1, n))) for n, s in S_dict)
+#    watterson_theta = np.sum(np.divide(S_dict[:,1], np.sum(1 / np.arange(1, S_dict[:,0].all()))))
+    watterson_theta = 0
+    for n, s in S.items():
+        a1 = np.sum(1 / np.arange(1, n))
+        watterson_theta += s/a1
+#    print(perf_counter() - start)
 # calculate number of sites weighted by how many genotypes are missing in each site
 # this allows calculation of an averaged Watterson's incorporating missing sites
-    weighted_sites = np.sum((N[n] * (n/max(N, key = N.get))) for n in N)
-
+#    start = perf_counter()
+#    weighted_sites = np.sum((N[n] * (n/max(N))) for n in N)
+    weighted_sites = np.sum(np.multiply(N_dict[:,1], (N_dict[:,0]/max(N))))
+#    weighted_sites = 0
+#    for n in N:
+#        weighted_sites += N[n] * (n/max(N))
+#    print(perf_counter() - start)
 # return averaged Watterson's theta, raw watterson's theta, and weighted site count
     return(watterson_theta/weighted_sites, watterson_theta, weighted_sites)
 
@@ -232,6 +248,7 @@ def calc_tajima_d(gt_array):
     watterson_theta = np.sum((S[n]/np.sum(1 / np.arange(1, n))) for n in S)
 
 # calculate denominator for Tajima's D as in scikit-allel but looping to incoporate missing genotypes
+#    start = perf_counter()
     d_stdev = 0
     for n in S:
         a1 = np.sum(1 / np.arange(1, n))
@@ -243,7 +260,8 @@ def calc_tajima_d(gt_array):
         e1 = c1 / a1
         e2 = c2 / (a1**2 + a2)
         d_stdev += np.sqrt((e1 * S[n]) + (e2 * S[n] * (S[n] - 1)))
-
+#    d_stdev = np.sum(np.sqrt((((((n + 1) / (3 * (n - 1))) - (1 / (np.sum(1 / np.arange(1, n))))) / (np.sum(1 / np.arange(1, n)))) * S[n]) + ((((2 * (n**2 + n + 3) / (9 * n * (n - 1))) - ((n + 2) / ((np.sum(1 / np.arange(1, n))) * n)) + ((np.sum(1 / (np.arange(1, n)**2))) / ((np.sum(1 / np.arange(1, n)))**2))) / ((np.sum(1 / np.arange(1, n)))**2 + (np.sum(1 / (np.arange(1, n)**2))))) * S[n] * (S[n] - 1))) for n in S)
+#    print(perf_counter() - start)
     warnings.filterwarnings(action = 'error', category = RuntimeWarning)
     try:
         tajima_d = (raw_pi - watterson_theta) / d_stdev
