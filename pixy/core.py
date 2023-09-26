@@ -30,6 +30,7 @@ import multiprocess as mp
 from scipy import special
 from itertools import combinations
 from collections import Counter
+from time import perf_counter
 
 # function for re-aggregating subwindows from the temporary output
 def aggregate_output(df_for_stat, stat, chromosome, window_size, fst_type):
@@ -521,11 +522,15 @@ def compute_summary_stats(args, popnames, popindices, temp_file, chromosome, chu
                         avg_watterson_theta, watterson_theta, weighted_sites = calc.calc_watterson_theta(gt_pop)                        
                 # create a string of the Watterson's theta results to write to file
                 #klk added NA so that pi/dxy/fst have the same # of columns, npb has kept this for watterson theta
+#                start = perf_counter()
                 pixy_result = "watterson_theta" + "\t" + str(pop) + "\tNA\t" + str(chromosome) + "\t" + str(window_pos_1) + "\t" + str(window_pos_2) + "\t" + str(avg_watterson_theta) + "\t" + str(no_sites) + "\t" + str(no_var_sites) + "\t" + str(watterson_theta) + "\t" + str(weighted_sites)
+#                pixy_result = f'watterson_theta\t{pop}\tNA\t{chromosome}\t{window_pos_1}\t{window_pos_2}\t{avg_watterson_theta}\t{no_sites}\t{no_var_sites}\t{watterson_theta}\t{weighted_sites}'
+#                print(perf_counter() - start)
                 if 'pixy_output' in locals():
                     pixy_output = pixy_output + "\n" + pixy_result
                 else:
-                    pixy_output = pixy_result                  
+                    pixy_output = pixy_result
+#                print(perf_counter() - start)
 
         # TAJIMA_D:
         # NEUTRALITY TEST TAKING NORMALIZED DIFFERENCE OF WATTERSON'S THETA AND PI
