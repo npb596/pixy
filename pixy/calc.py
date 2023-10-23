@@ -249,7 +249,9 @@ def calc_tajima_d(gt_array):
 
 # calculate denominator for Tajima's D as in scikit-allel but looping to incoporate missing genotypes
 #    start = perf_counter()
-    d_stdev = 0
+#    d_stdev = 0
+    d_covar = 0
+    d_stdev_denom = 0
     for n, s in S.items():
         a1 = np.sum(1 / np.arange(1, n))
         a2 = np.sum(1 / (np.arange(1, n)**2))
@@ -261,7 +263,7 @@ def calc_tajima_d(gt_array):
         e2 = c2 / (a1**2 + a2)
 #        d_stdev += np.sqrt((e1 * S[n]) + (e2 * S[n] * (S[n] - 1)))
 #        d_covar += (e1 * s) + (e2 * s * (s - 1)) # add covariances not co standard deviations assuming same sample sizes
-        d_covar += (e1 * s) + (e2 * s * (s - 1)) * (n - 1) # don't assume same sample sizes (this has to be the case when there are missing genotypes)
+        d_covar += ((e1 * s) + (e2 * s * (s - 1))) * (n - 1) # don't assume same sample sizes (this has to be the case when there are missing genotypes)
         d_stdev_denom += n - 1 # variable sample sizes need summed denominator for standard deviation
 #    d_stdev = np.sqrt(d_covar/len(S)) # assume same sample sizes for pooled variance
     d_stdev = np.sqrt(d_covar/d_stdev_denom) # don't assume same sample sizes for pooled variance
