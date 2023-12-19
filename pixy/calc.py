@@ -9,6 +9,7 @@ import warnings
 import allel
 import numpy as np
 from time import perf_counter
+import warnings
 
 from scipy import special
 from itertools import combinations
@@ -197,6 +198,8 @@ def calc_watterson_theta(gt_array):
     S_dict = np.array(tuple(S.items()))
     N_dict = np.array(tuple(N.items()))
 
+    N_array = np.array(tuple(N.items()))
+
 # calculate watterson's theta as sum of equations for differing numbers of genotypes
 # this is calculating Watterson's theta incorporating missing genotypes
 #    start = perf_counter()
@@ -221,6 +224,15 @@ def calc_watterson_theta(gt_array):
 
 #def calc_pi_alt(gt_array):
 
+# calculate number of sites weighted by how many genotypes are missing in each site
+# this allows calculation of an averaged Watterson's incorporating missing sites
+    weighted_sites = np.sum(np.multiply(N_array[:,1], (N_array[:,0]/max(N))))
+
+# return averaged Watterson's theta, raw watterson's theta, and weighted site count
+    return(watterson_theta/weighted_sites, watterson_theta, weighted_sites)
+
+def calc_tajima_d(gt_array):
+
 # counts of each of the two alleles at each site
 #    allele_counts = gt_array.count_alleles(max_allele = 1)
 
@@ -236,6 +248,8 @@ def calc_tajima_d(gt_array):
 
 # counts of each of the two alleles at each site
     allele_counts = gt_array.count_alleles(max_allele = 1)
+    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
+    raw_pi = np.sum(mpd)
 
 # counts of only variant sites by excluding sites with variant count 0
     variant_counts = allele_counts[allele_counts[:,1] != 0]
@@ -253,6 +267,16 @@ def calc_tajima_d(gt_array):
     d_covar = 0
     d_stdev_denom = 0
     for n, s in S.items():
+# calculate watterson's theta as sum of equations for differing numbers of genotypes
+# this is calculating Watterson's theta incorporating missing genotypes
+    watterson_theta = 0
+    for n, s in S.items():
+        a1 = np.sum(1 / np.arange(1, n))
+        watterson_theta += s/a1
+
+# calculate denominator for Tajima's D as in scikit-allel but looping to incorporate missing genotypes
+    d_stdev = 0
+    for n in S:
         a1 = np.sum(1 / np.arange(1, n))
         a2 = np.sum(1 / (np.arange(1, n)**2))
         b1 = (n + 1) / (3 * (n - 1))
@@ -269,6 +293,12 @@ def calc_tajima_d(gt_array):
     d_stdev = np.sqrt(d_covar/d_stdev_denom) # don't assume same sample sizes for pooled variance
 #    d_stdev = np.sum(np.sqrt((((((n + 1) / (3 * (n - 1))) - (1 / (np.sum(1 / np.arange(1, n))))) / (np.sum(1 / np.arange(1, n)))) * S[n]) + ((((2 * (n**2 + n + 3) / (9 * n * (n - 1))) - ((n + 2) / ((np.sum(1 / np.arange(1, n))) * n)) + ((np.sum(1 / (np.arange(1, n)**2))) / ((np.sum(1 / np.arange(1, n)))**2))) / ((np.sum(1 / np.arange(1, n)))**2 + (np.sum(1 / (np.arange(1, n)**2))))) * S[n] * (S[n] - 1))) for n in S)
 #    print(perf_counter() - start)
+    warnings.filterwarnings(action = 'error', category = RuntimeWarning)
+    try:
+        tajima_d = (raw_pi - watterson_theta) / d_stdev
+    except RuntimeWarning:
+        tajima_d = 'NA'
+
     warnings.filterwarnings(action = 'error', category = RuntimeWarning)
     try:
         tajima_d = (raw_pi - watterson_theta) / d_stdev
