@@ -9,7 +9,6 @@ import warnings
 import allel
 import numpy as np
 from time import perf_counter
-import warnings
 
 from scipy import special
 from itertools import combinations
@@ -222,61 +221,39 @@ def calc_watterson_theta(gt_array):
 # return averaged Watterson's theta, raw watterson's theta, and weighted site count
     return(watterson_theta/weighted_sites, watterson_theta, weighted_sites)
 
-#def calc_pi_alt(gt_array):
-
-# calculate number of sites weighted by how many genotypes are missing in each site
-# this allows calculation of an averaged Watterson's incorporating missing sites
-    weighted_sites = np.sum(np.multiply(N_array[:,1], (N_array[:,0]/max(N))))
-
-# return averaged Watterson's theta, raw watterson's theta, and weighted site count
-    return(watterson_theta/weighted_sites, watterson_theta, weighted_sites)
-
-def calc_tajima_d(gt_array):
-
-# counts of each of the two alleles at each site
-#    allele_counts = gt_array.count_alleles(max_allele = 1)
-
-# calculate mean pairwise differences and sum these together
-#    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
-#    mpd_sum = np.sum(mpd)
-
-# return this as raw pi
-# this process is essentially the scikit-allel pi calculation
-#    return(mpd_sum)
-
 def calc_tajima_d(gt_array):
 
 # counts of each of the two alleles at each site
     allele_counts = gt_array.count_alleles(max_allele = 1)
-    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
-    raw_pi = np.sum(mpd)
+#    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
+#    raw_pi = np.sum(mpd)
 
 # counts of only variant sites by excluding sites with variant count 0
     variant_counts = allele_counts[allele_counts[:,1] != 0]
-
-    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
-    raw_pi = np.sum(mpd)
 # for variant sites only, use Counter to generate dictionary
 # where the key is the number of genotypes and value is number of sites with that many genotypes
     S = Counter(variant_counts[:,0] + variant_counts[:,1])
-    watterson_theta = np.sum((S[n]/np.sum(1 / np.arange(1, n))) for n in S)
+#    watterson_theta = np.sum((S[n]/np.sum(1 / np.arange(1, n))) for n in S)
+
+    pi = calc_pi(gt_array)[0]
+    watterson_theta = calc_watterson_theta(gt_array)[0]
 
 # calculate denominator for Tajima's D as in scikit-allel but looping to incoporate missing genotypes
 #    start = perf_counter()
 #    d_stdev = 0
     d_covar = 0
     d_stdev_denom = 0
-    for n, s in S.items():
+#    for n, s in S.items():
 # calculate watterson's theta as sum of equations for differing numbers of genotypes
 # this is calculating Watterson's theta incorporating missing genotypes
-    watterson_theta = 0
-    for n, s in S.items():
-        a1 = np.sum(1 / np.arange(1, n))
-        watterson_theta += s/a1
+#    watterson_theta = 0
+#    for n, s in S.items():
+#        a1 = np.sum(1 / np.arange(1, n))
+#        watterson_theta += s/a1
 
 # calculate denominator for Tajima's D as in scikit-allel but looping to incorporate missing genotypes
     d_stdev = 0
-    for n in S:
+    for n, s in S.items():
         a1 = np.sum(1 / np.arange(1, n))
         a2 = np.sum(1 / (np.arange(1, n)**2))
         b1 = (n + 1) / (3 * (n - 1))
@@ -295,17 +272,11 @@ def calc_tajima_d(gt_array):
 #    print(perf_counter() - start)
     warnings.filterwarnings(action = 'error', category = RuntimeWarning)
     try:
-        tajima_d = (raw_pi - watterson_theta) / d_stdev
-    except RuntimeWarning:
-        tajima_d = 'NA'
-
-    warnings.filterwarnings(action = 'error', category = RuntimeWarning)
-    try:
-        tajima_d = (raw_pi - watterson_theta) / d_stdev
+        tajima_d = (pi - watterson_theta) / d_stdev
     except RuntimeWarning:
         tajima_d = 'NA'
 
 # return Tajima's D calculation using raw pi and Watterson's theta calculations above
 # also return the raw pi calculation, raw Watterson's theta, and standard deviation of their covariance individually
 # note that the "raw" values of pi and Watterson's theta are needed for Tajima's D, not the ones incorporating sites
-    return(tajima_d, raw_pi, watterson_theta, d_stdev)
+    return(tajima_d, pi, watterson_theta, d_stdev)

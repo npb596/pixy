@@ -519,7 +519,7 @@ def compute_summary_stats(args, popnames, popindices, temp_file, chromosome, chu
                         variant_counts = allele_counts[allele_counts[:,1] != 0]
                         no_sites = np.count_nonzero(np.sum(allele_counts, 1))
                         no_var_sites = np.count_nonzero(np.sum(variant_counts, 1))
-                        avg_watterson_theta, watterson_theta, weighted_sites = pixy.calc.calc_watterson_theta(gt_pop)                        
+                        avg_watterson_theta, watterson_theta, weighted_sites = calc.calc_watterson_theta(gt_pop)                        
                 # create a string of the Watterson's theta results to write to file
                 #klk added NA so that pi/dxy/fst have the same # of columns, npb has kept this for watterson theta
 #                start = perf_counter()
@@ -556,7 +556,7 @@ def compute_summary_stats(args, popnames, popindices, temp_file, chromosome, chu
                         # not directly used in the calculation
                         allele_counts = gt_pop.count_alleles(max_allele = 1)
                         no_sites = np.count_nonzero(np.sum(allele_counts, 1))
-                        tajima_d, pi, watterson_theta, d_stdev = pixy.calc.calc_tajima_d(gt_pop)
+                        tajima_d, pi, watterson_theta, d_stdev = calc.calc_tajima_d(gt_pop)
 
                 # create a string of the Tajima's D results to write to file
                 #klk added NA so that pi/dxy/fst have the same # of columns, npb has kept this for Tajima's D
