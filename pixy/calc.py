@@ -197,29 +197,32 @@ def calc_watterson_theta(gt_array):
     S_dict = np.array(tuple(S.items()))
     N_dict = np.array(tuple(N.items()))
 
-    N_array = np.array(tuple(N.items()))
+#    N_array = np.array(tuple(N.items()))
 
 # calculate watterson's theta as sum of equations for differing numbers of genotypes
 # this is calculating Watterson's theta incorporating missing genotypes
 #    start = perf_counter()
+#    watterson_theta = np.sum((S[n]/np.sum(1 / np.arange(1, n))) for n in S)
+#    weighted_sites = np.sum((N[n] * (n/max(N, key = N.get))) for n in N)
 #    watterson_theta = np.sum((s/np.sum(1 / np.arange(1, n))) for n, s in S_dict)
 #    watterson_theta = np.sum(np.divide(S_dict[:,1], np.sum(1 / np.arange(1, S_dict[:,0].all()))))
     watterson_theta = 0
-    for n, s in S.items():
+    for n in S:
         a1 = np.sum(1 / np.arange(1, n))
-        watterson_theta += s/a1
+        watterson_theta += S[n]/a1 
 #    print(perf_counter() - start)
 # calculate number of sites weighted by how many genotypes are missing in each site
 # this allows calculation of an averaged Watterson's incorporating missing sites
 #    start = perf_counter()
 #    weighted_sites = np.sum((N[n] * (n/max(N))) for n in N)
     weighted_sites = np.sum(np.multiply(N_dict[:,1], (N_dict[:,0]/max(N))))
+#    print(len(allele_counts))
 #    weighted_sites = 0
 #    for n in N:
 #        weighted_sites += N[n] * (n/max(N))
 #    print(perf_counter() - start)
 # return averaged Watterson's theta, raw watterson's theta, and weighted site count
-    return(watterson_theta/weighted_sites, watterson_theta, weighted_sites)
+    return(watterson_theta/len(allele_counts), watterson_theta, weighted_sites)
 
 def calc_tajima_d(gt_array):
 
@@ -235,8 +238,10 @@ def calc_tajima_d(gt_array):
     S = Counter(variant_counts[:,0] + variant_counts[:,1])
 #    watterson_theta = np.sum((S[n]/np.sum(1 / np.arange(1, n))) for n in S)
 
-    pi = calc_pi(gt_array)[0]
-    watterson_theta = calc_watterson_theta(gt_array)[0]
+    avg_pi = calc_pi(gt_array)[0]
+    raw_pi = calc_pi(gt_array)[0] * len(allele_counts)
+    avg_watterson_theta = calc_watterson_theta(gt_array)[0]
+    raw_watterson_theta = calc_watterson_theta(gt_array)[1]
 
 # calculate denominator for Tajima's D as in scikit-allel but looping to incoporate missing genotypes
 #    start = perf_counter()
@@ -272,11 +277,11 @@ def calc_tajima_d(gt_array):
 #    print(perf_counter() - start)
     warnings.filterwarnings(action = 'error', category = RuntimeWarning)
     try:
-        tajima_d = (pi - watterson_theta) / d_stdev
+        tajima_d = (raw_pi - raw_watterson_theta) / d_stdev
     except RuntimeWarning:
         tajima_d = 'NA'
 
 # return Tajima's D calculation using raw pi and Watterson's theta calculations above
 # also return the raw pi calculation, raw Watterson's theta, and standard deviation of their covariance individually
 # note that the "raw" values of pi and Watterson's theta are needed for Tajima's D, not the ones incorporating sites
-    return(tajima_d, pi, watterson_theta, d_stdev)
+    return(tajima_d, raw_pi, avg_watterson_theta, d_stdev)
