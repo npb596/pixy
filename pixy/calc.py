@@ -241,8 +241,9 @@ def calc_tajima_d(gt_array):
     avg_pi = calc_pi(gt_array)[0]
 # The denominator of pixy's weighted average pi implicitly contains number of sites not easily separated out of equation
 # To obtain a raw pi for Tajima's D this must be "corrected"
-# len(allele_counts) includes the total number of sites assuming complete invariant data
-# This value can be multiplied by the fraction of actual comparisons to possible comparisons assuming complete invariant data to obtain pi correction factor
+# len(allele_counts) includes the total number of sites
+# This value can be multiplied by the fraction of actual comparisons to hypothetical comparisons assuming complete genotype data to obtain pi correction factor
+# Missing sites will change average pi and correction factor proportionally do raw pi is unaffected, as it shouldn't be affected by sites
     pi_scale_factor = len(allele_counts) * calc_pi(gt_array)[2] / (calc_pi(gt_array)[3] + calc_pi(gt_array)[2])
     raw_pi = calc_pi(gt_array)[0] * pi_scale_factor
     avg_watterson_theta = calc_watterson_theta(gt_array)[0]
