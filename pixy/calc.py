@@ -1,10 +1,4 @@
 import sys
-sys.path.append("/home/npb0015/conda/pkgs/scikit-allel-1.3.5-py38h43a58ef_1/lib/python3.8/site-packages/")
-sys.path.append("/home/npb0015/conda/pkgs/asciitree-0.3.3-py_2/site-packages/")
-sys.path.append("/home/npb0015/conda/pkgs/numcodecs-0.9.1-py38h709712a_2/lib/python3.8/site-packages/")
-sys.path.append("/home/npb0015/conda/pkgs/zarr-2.11.0-pyhd8ed1ab_0/site-packages/")
-sys.path.append("/home/npb0015/conda/pkgs/fasteners-0.17.3-pyhd8ed1ab_0/site-packages/")
-sys.path.append("/home/npb0015/conda/pkgs/multiprocess-0.70.12.2-py38h497a2fe_1/lib/python3.8/site-packages/")
 import warnings
 import allel
 import numpy as np
@@ -187,15 +181,17 @@ def calc_watterson_theta(gt_array):
 
 # counts of only variant sites by excluding sites with variant count 0
     variant_counts = allele_counts[allele_counts[:,1] != 0]
+# check for singletons
+    variant_counts = variant_counts[variant_counts[:,0] + variant_counts[:,1] > 1]
 
 # for variant sites only, then all sites together, use Counter to generate dictionary
 # where the key is the number of genotypes and value is number of sites with that many genotypes
     S = Counter(variant_counts[:,0] + variant_counts[:,1])
-    N = Counter(allele_counts[:,0] + allele_counts[:,1])
+#    N = Counter(allele_counts[:,0] + allele_counts[:,1])
 #    S_keys = np.array([x for x in S.keys()])
 #    S_values = np.array([y for y in S.values()])
-    S_dict = np.array(tuple(S.items()))
-    N_dict = np.array(tuple(N.items()))
+#    S_dict = np.array(tuple(S.items()))
+#    N_dict = np.array(tuple(N.items()))
 
 #    N_array = np.array(tuple(N.items()))
 
@@ -214,22 +210,23 @@ def calc_watterson_theta(gt_array):
 # calculate number of sites weighted by how many genotypes are missing in each site
 # this allows calculation of an averaged Watterson's incorporating missing sites
 #    start = perf_counter()
+    no_sites = np.count_nonzero(np.sum(allele_counts, 1))
 #    weighted_sites = np.sum((N[n] * (n/max(N))) for n in N)
-    weighted_sites = np.sum(np.multiply(N_dict[:,1], (N_dict[:,0]/max(N))))
+#    weighted_sites = np.sum(np.multiply(N_dict[:,1], (N_dict[:,0]/100)))
 #    print(len(allele_counts))
 #    weighted_sites = 0
 #    for n in N:
 #        weighted_sites += N[n] * (n/max(N))
 #    print(perf_counter() - start)
 # return averaged Watterson's theta, raw watterson's theta, and weighted site count
-    return(watterson_theta/weighted_sites, watterson_theta, weighted_sites)
+    return(watterson_theta/no_sites, watterson_theta, no_sites)
 
 def calc_tajima_d(gt_array):
 
 # counts of each of the two alleles at each site
     allele_counts = gt_array.count_alleles(max_allele = 1)
-#    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
-#    raw_pi = np.sum(mpd)
+    mpd = allel.mean_pairwise_difference(allele_counts, fill = 0)
+    raw_pi = np.sum(mpd)
 
 # counts of only variant sites by excluding sites with variant count 0
     variant_counts = allele_counts[allele_counts[:,1] != 0]
@@ -238,15 +235,15 @@ def calc_tajima_d(gt_array):
     S = Counter(variant_counts[:,0] + variant_counts[:,1])
 #    watterson_theta = np.sum((S[n]/np.sum(1 / np.arange(1, n))) for n in S)
 
-    avg_pi = calc_pi(gt_array)[0]
+#    avg_pi = calc_pi(gt_array)[0]
 # The denominator of pixy's weighted average pi implicitly contains number of sites not easily separated out of equation
 # To obtain a raw pi for Tajima's D this must be "corrected"
 # len(allele_counts) includes the total number of sites
 # This value can be multiplied by the fraction of actual comparisons to hypothetical comparisons assuming complete genotype data to obtain pi correction factor
 # Missing sites will change average pi and correction factor proportionally do raw pi is unaffected, as it shouldn't be affected by sites
-    pi_scale_factor = len(allele_counts) * calc_pi(gt_array)[2] / (calc_pi(gt_array)[3] + calc_pi(gt_array)[2])
-    raw_pi = calc_pi(gt_array)[0] * pi_scale_factor
-    avg_watterson_theta = calc_watterson_theta(gt_array)[0]
+#    pi_scale_factor = len(allele_counts) * calc_pi(gt_array)[2] / (calc_pi(gt_array)[3] + calc_pi(gt_array)[2])
+#    raw_pi = calc_pi(gt_array)[0] * pi_scale_factor
+#    avg_watterson_theta = calc_watterson_theta(gt_array)[0]
     raw_watterson_theta = calc_watterson_theta(gt_array)[1]
 
 # calculate denominator for Tajima's D as in scikit-allel but looping to incoporate missing genotypes
@@ -273,12 +270,12 @@ def calc_tajima_d(gt_array):
         c2 = b2 - ((n + 2) / (a1 * n)) + (a2 / (a1**2))
         e1 = c1 / a1
         e2 = c2 / (a1**2 + a2)
-#        d_stdev += np.sqrt((e1 * S[n]) + (e2 * S[n] * (S[n] - 1)))
+        d_stdev += np.sqrt((e1 * S[n]) + (e2 * S[n] * (S[n] - 1)))
 #        d_covar += (e1 * s) + (e2 * s * (s - 1)) # add covariances not co standard deviations assuming same sample sizes
-        d_covar += ((e1 * s) + (e2 * s * (s - 1))) * (n - 1) # don't assume same sample sizes (this has to be the case when there are missing genotypes)
-        d_stdev_denom += n - 1 # variable sample sizes need summed denominator for standard deviation
+#        d_covar += ((e1 * s) + (e2 * s * (s - 1))) * (n - 1) # don't assume same sample sizes (this has to be the case when there are missing genotypes)
+#        d_stdev_denom += n - 1 # variable sample sizes need summed denominator for standard deviation
 #    d_stdev = np.sqrt(d_covar/len(S)) # assume same sample sizes for pooled variance
-    d_stdev = np.sqrt(d_covar/d_stdev_denom) # don't assume same sample sizes for pooled variance
+#    d_stdev = np.sqrt(d_covar/d_stdev_denom) # don't assume same sample sizes for pooled variance
 #    d_stdev = np.sum(np.sqrt((((((n + 1) / (3 * (n - 1))) - (1 / (np.sum(1 / np.arange(1, n))))) / (np.sum(1 / np.arange(1, n)))) * S[n]) + ((((2 * (n**2 + n + 3) / (9 * n * (n - 1))) - ((n + 2) / ((np.sum(1 / np.arange(1, n))) * n)) + ((np.sum(1 / (np.arange(1, n)**2))) / ((np.sum(1 / np.arange(1, n)))**2))) / ((np.sum(1 / np.arange(1, n)))**2 + (np.sum(1 / (np.arange(1, n)**2))))) * S[n] * (S[n] - 1))) for n in S)
 #    print(perf_counter() - start)
     warnings.filterwarnings(action = 'error', category = RuntimeWarning)
